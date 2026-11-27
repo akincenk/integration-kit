@@ -1,0 +1,7 @@
+.venv
+.git
+tests
+sdk
+docs
+k8s
+examples

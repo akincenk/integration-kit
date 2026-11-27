@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: integration-kit
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: integration-kit
+  namespace: integration-kit
+type: Opaque
+stringData:
+  IK_API_KEYS: sk_test_demo          # demo values; use a real secret manager in production
+  IK_WEBHOOK_SECRET: whsec_demo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: integration-kit
+  namespace: integration-kit
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: integration-kit}
+  template:
+    metadata:
+      labels: {app: integration-kit}
+    spec:
+      securityContext: {runAsNonRoot: true, runAsUser: 10001}
+      containers:
+        - name: api
+          image: integration-kit:local
+          imagePullPolicy: IfNotPresent
+          ports: [{containerPort: 8000}]
+          envFrom: [{secretRef: {name: integration-kit}}]
+          readinessProbe: {httpGet: {path: /readyz, port: 8000}, periodSeconds: 5}
+          livenessProbe: {httpGet: {path: /healthz, port: 8000}, periodSeconds: 10}
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {cpu: 500m, memory: 256Mi}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: integration-kit
+  namespace: integration-kit
+spec:
+  selector: {app: integration-kit}
+  ports: [{port: 80, targetPort: 8000}]
