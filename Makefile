@@ -1,6 +1,6 @@
 .PHONY: test run docker e2e
 test:   ## Python + JavaScript tests
-	uv run pytest -q && node --test sdk/js/
+	uv run pytest -q && node --test sdk/js/index.test.mjs
 run:    ## local server on :8000
 	uv run uvicorn server.app:app --reload
 docker: ## build and run the container
